@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ActiveCoach - Personalized Fitness App</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --accent: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --purple: #9b59b6;
+            --orange: #e67e22;
+            --background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            --card-bg: rgba(30, 30, 40, 0.85);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background: var(--background);
+            color: white;
+            min-height: 100vh;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 15px 0;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .timer-display {
+            font-size: 3rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 25px;
+            border-radius: 50px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            color: #fff;
+            border: 2px solid var(--primary);
+        }
+        
+        .phase-info {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            width: 100%;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .phase-title {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--secondary);
+        }
+        
+        .phase-description {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #e0e0e0;
+        }
+        
+        .exercise-timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 8px;
+            color: var(--accent);
+        }
+        
+        .motivation {
+            font-size: 1.1rem;
+            font-style: italic;
+            text-align: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 3px solid var(--purple);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 100px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .btn-accent {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-purple {
+            background: var(--purple);
+            color: white;
+        }
+        
+        .btn-orange {
+            background: var(--orange);
+            color: white;
+        }
+        
+        .btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .map-container {
+            height: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin: 8px 0;
+            color: var(--secondary);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        .progress-container {
+            margin-top: 15px;
+        }
+        
+        .progress-bar {
+            height: 16px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .phases {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .phase-indicator {
+            text-align: center;
+            padding: 5px;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 70px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin: 2px;
+        }
+        
+        .phase-indicator.active {
+            opacity: 1;
+            font-weight: bold;
+            background: rgba(52, 152, 219, 0.3);
+            color: white;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .voice-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .voice-btn {
+            padding: 10px 15px;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .voice-btn.active {
+            background: var(--secondary);
+        }
+        
+        .settings {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            color: #ddd;
+        }
+        
+        select, input {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.4);
+            color: white;
+            font-size: 1rem;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        
+        .storyline {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .story-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .story-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .activity-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .activity-btn {
+            padding: 12px 20px;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+        
+        .activity-btn.active {
+            background: var(--purple);
+            border-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .voice-gender {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .gender-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .gender-btn.active {
+            background: var(--primary);
+            border-color: transparent;
+        }
+        
+        .milestone-display {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 1.1rem;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                max-width: 700px;
+                margin: 0 auto;
+            }
+            
+            .timer-display {
+                font-size: 3.5rem;
+            }
+            
+            .map-container {
+                height: 350px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* Scrollbar styling */
+        .storyline::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .storyline::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        
+        .storyline::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        .storyline::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+        
+        .highlight {
+            animation: highlight 2s ease;
+        }
+        
+        @keyframes highlight {
+            0% { background-color: rgba(46, 204, 113, 0.3); }
+            100% { background-color: transparent; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-running"></i> ActiveCoach</h1>
+            <p class="subtitle">Your Personal Voice-Guided Fitness Trainer</p>
+        </header>
+        
+        <div class="card timer-container">
+            <div class="timer-display" id="timer">00:00</div>
+            
+            <div class="milestone-display" id="milestone">
+                Next milestone at 1 km
+            </div>
+            
+            <div class="phase-info">
+                <div class="phase-title" id="phase-title">Ready to Start?</div>
+                <div class="phase-description" id="phase-description">Set your workout time and press Start!</div>
+                <div class="exercise-timer" id="exercise-timer"></div>
+            </div>
+            
+            <div class="motivation" id="motivation">
+                "Every journey begins with a single step."
+            </div>
+            
+            <div class="activity-selector">
+                <button class="activity-btn active" data-activity="walk"><i class="fas fa-walking"></i> Walk</button>
+                <button class="activity-btn" data-activity="run"><i class="fas fa-running"></i> Run</button>
+                <button class="activity-btn" data-activity="cycle"><i class="fas fa-bicycle"></i> Cycle</button>
+            </div>
+            
+            <div class="settings">
+                <div class="setting-group">
+                    <label for="workoutTime"><i class="fas fa-clock"></i> Workout Time (minutes):</label>
+                    <select id="workoutTime">
+                        <option value="20">20 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="45" selected>45 minutes</option>
+                        <option value="60">60 minutes</option>
+                        <option value="90">90 minutes</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="warmupTime"><i class="fas fa-fire"></i> Warmup Time (minutes):</label>
+                    <select id="warmupTime">
+                        <option value="5">5 minutes</option>
+                        <option value="8" selected>8 minutes</option>
+                        <option value="10">10 minutes</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="cooldownTime"><i class="fas fa-snowflake"></i> Cooldown Time (minutes):</label>
+                    <select id="cooldownTime">
+                        <option value="5">5 minutes</option>
+                        <option value="8" selected>8 minutes</option>
+                        <option value="10">10 minutes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="voice-gender">
+                <button class="gender-btn active" data-gender="female">
+                    <i class="fas fa-female"></i> Female Voice
+                </button>
+                <button class="gender-btn" data-gender="male">
+                    <i class="fas fa-male"></i> Male Voice
+                </button>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" id="startBtn">
+                    <i class="fas fa-play"></i> Start
+                </button>
+                <button class="btn btn-secondary" id="pauseBtn" disabled>
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button class="btn btn-accent" id="resetBtn">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="progress"></div>
+                </div>
+                <div class="phases">
+                    <div class="phase-indicator active" id="phase-0">Ready</div>
+                    <div class="phase-indicator" id="phase-1">Warm-up</div>
+                    <div class="phase-indicator" id="phase-2">Main Activity</div>
+                    <div class="phase-indicator" id="phase-3">Cool-down</div>
+                </div>
+            </div>
+            
+            <div class="storyline" id="storyline">
+                <div class="story-item">Welcome to your fitness journey! Set your workout and press Start.</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2><i class="fas fa-map-marked-alt"></i> Your Activity Route</h2>
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-route"></i> Distance</div>
+                    <div class="stat-value" id="distance">0.00</div>
+                    <div class="stat-label">km</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-tachometer-alt"></i> Pace</div>
+                    <div class="stat-value" id="pace">0:00</div>
+                    <div class="stat-label">min/km</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-stopwatch"></i> Time Left</div>
+                    <div class="stat-value" id="time-left">00:00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-burn"></i> Calories</div>
+                    <div class="stat-value" id="calories">0</div>
+                    <div class="stat-label">kcal</div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>ActiveCoach &copy; 2023 | Voice-guided fitness motivation</p>
+        </footer>
+    </div>
+
+    <script>
+        // Application state
+        const state = {
+            running: false,
+            paused: false,
+            timeLeft: 0,
+            currentPhase: 0,
+            timerInterval: null,
+            positions: [],
+            startTime: null,
+            distance: 0,
+            map: null,
+            polyline: null,
+            voiceEnabled: true,
+            lastVoiceTime: 0,
+            lastPositionTime: 0,
+            workoutTime: 45 * 60,
+            warmupTime: 8 * 60,
+            cooldownTime: 8 * 60,
+            activity: "walk",
+            storyline: [],
+            currentExerciseIndex: 0,
+            exerciseTimer: 60,
+            voiceGender: "female",
+            lastMilestone: 0
+        };
+
+        // Warmup and cooldown exercises
+        const warmupExercises = [
+            { name: "Arm Circles", duration: 60, desc: "Stand with arms extended, make circles forward and backward" },
+            { name: "Leg Swings", duration: 60, desc: "Hold onto support, swing one leg forward and back" },
+            { name: "Rest", duration: 60, desc: "Walk in place and shake out your limbs" },
+            { name: "High Knees", duration: 60, desc: "March in place, lifting knees as high as comfortable" },
+            { name: "Butt Kicks", duration: 60, desc: "Jog in place, kicking heels up toward glutes" },
+            { name: "Rest", duration: 60, desc: "Deep breathing and light stretching" },
+            { name: "Torso Twists", duration: 60, desc: "Stand with feet shoulder-width, twist torso side to side" },
+            { name: "Walking Lunges", duration: 60, desc: "Step forward into lunge, alternate legs" }
+        ];
+        
+        const cooldownExercises = [
+            { name: "Quad Stretch", duration: 60, desc: "Stand on one leg, pull other foot toward glutes" },
+            { name: "Hamstring Stretch", duration: 60, desc: "Sit on ground, extend one leg, reach toward toes" },
+            { name: "Rest", duration: 60, desc: "Walk slowly and breathe deeply" },
+            { name: "Calf Stretch", duration: 60, desc: "Place hands on wall, step one foot back, press heel down" },
+            { name: "Shoulder Stretch", duration: 60, desc: "Bring one arm across body, hold with other arm" },
+            { name: "Rest", duration: 60, desc: "Deep breathing and hydration" },
+            { name: "Child's Pose", duration: 60, desc: "Kneel, sit back on heels, stretch arms forward" },
+            { name: "Spinal Twist", duration: 60, desc: "Lie on back, bring knees to chest, lower to one side" }
+        ];
+
+        // Motivational quotes
+        const motivationalQuotes = [
+            "Every step is progress, no matter how small.",
+            "Your body can stand almost anything. It's your mind you have to convince.",
+            "The miracle isn't that I finished. The miracle is that I had the courage to start.",
+            "You're stronger than you think. Keep pushing!",
+            "It never gets easier, you just get stronger.",
+            "You are one step closer to your goal.",
+            "Fitness is not about being better than someone else. It's about being better than you used to be."
+        ];
+        
+        // Activity-specific messages
+        const activityMessages = {
+            walk: [
+                "Let's begin with a nice brisk walk. Feel the rhythm of your steps.",
+                "Walking is the perfect way to clear your mind while moving your body.",
+                "Notice your surroundings as you walk. What beautiful things do you see?",
+                "Walking regularly can reduce your risk of chronic diseases. Great choice!",
+                "You're doing great! Keep that steady pace going.",
+                "Walking is a gift you give to your future self."
+            ],
+            run: [
+                "Time to get those legs moving! Start with a comfortable jog.",
+                "Running releases endorphins - nature's feel-good chemicals!",
+                "Focus on your breathing. In through the nose, out through the mouth.",
+                "Every run makes you stronger, both physically and mentally.",
+                "You're doing amazing! Find your rhythm and enjoy the movement.",
+                "The only run you regret is the one you didn't do."
+            ],
+            cycle: [
+                "Let's get those pedals turning! Start with a comfortable pace.",
+                "Cycling is great for your cardiovascular health. Great choice!",
+                "Focus on maintaining a smooth, circular pedal stroke.",
+                "Feel the wind on your face as you move forward.",
+                "You're building strength and endurance with every pedal stroke.",
+                "Cycling is freedom on two wheels. Enjoy the journey!"
+            ]
+        };
+
+        // DOM Elements
+        const timerDisplay = document.getElementById('timer');
+        const phaseTitle = document.getElementById('phase-title');
+        const phaseDescription = document.getElementById('phase-description');
+        const exerciseTimerDisplay = document.getElementById('exercise-timer');
+        const motivationText = document.getElementById('motivation');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progressBar = document.getElementById('progress');
+        const distanceDisplay = document.getElementById('distance');
+        const paceDisplay = document.getElementById('pace');
+        const timeLeftDisplay = document.getElementById('time-left');
+        const caloriesDisplay = document.getElementById('calories');
+        const voiceToggle = document.getElementById('voiceToggle');
+        const testVoiceBtn = document.getElementById('testVoice');
+        const workoutTimeSelect = document.getElementById('workoutTime');
+        const warmupTimeSelect = document.getElementById('warmupTime');
+        const cooldownTimeSelect = document.getElementById('cooldownTime');
+        const storylineEl = document.getElementById('storyline');
+        const phaseIndicators = document.querySelectorAll('.phase-indicator');
+        const activityBtns = document.querySelectorAll('.activity-btn');
+        const genderBtns = document.querySelectorAll('.gender-btn');
+        const milestoneDisplay = document.getElementById('milestone');
+
+        // Initialize the map
+        function initMap() {
+            state.map = L.map('map').setView([0, 0], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(state.map);
+            
+            state.polyline = L.polyline([], {color: '#ff6b6b', weight: 5}).addTo(state.map);
+        }
+
+        // Format time from seconds to MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Update the timer display
+        function updateTimerDisplay() {
+            timerDisplay.textContent = formatTime(state.timeLeft);
+            timeLeftDisplay.textContent = formatTime(state.timeLeft);
+        }
+
+        // Update phase information
+        function updatePhaseInfo() {
+            let title = "";
+            let description = "";
+            const elapsed = state.workoutTime - state.timeLeft;
+            
+            // Update active phase indicator
+            phaseIndicators.forEach((el, index) => {
+                if (index === state.currentPhase) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            
+            // Phase-specific information
+            switch(state.currentPhase) {
+                case 0: // Ready
+                    title = "Ready to Start?";
+                    description = "Set your workout parameters and press Start!";
+                    exerciseTimerDisplay.textContent = "";
+                    break;
+                case 1: // Warm-up
+                    title = "Warm-up: " + warmupExercises[state.currentExerciseIndex].name;
+                    description = warmupExercises[state.currentExerciseIndex].desc;
+                    exerciseTimerDisplay.textContent = `Time Left: ${formatTime(state.exerciseTimer)}`;
+                    break;
+                case 2: // Main Activity
+                    title = state.activity.charAt(0).toUpperCase() + state.activity.slice(1) + " Time";
+                    description = "Maintain a comfortable pace. You're doing great!";
+                    exerciseTimerDisplay.textContent = "";
+                    break;
+                case 3: // Cool-down
+                    title = "Cool-down: " + cooldownExercises[state.currentExerciseIndex].name;
+                    description = cooldownExercises[state.currentExerciseIndex].desc;
+                    exerciseTimerDisplay.textContent = `Time Left: ${formatTime(state.exerciseTimer)}`;
+                    break;
+            }
+            
+            phaseTitle.textContent = title;
+            phaseDescription.textContent = description;
+        }
+
+        // Show a random motivational quote
+        function showMotivationalQuote() {
+            const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+            motivationText.textContent = `"${motivationalQuotes[randomIndex]}"`;
+            return motivationalQuotes[randomIndex];
+        }
+
+        // Voice synthesis function with gender selection
+        function speak(text) {
+            if (!state.voiceEnabled) return;
+            
+            // Don't speak too frequently
+            const now = Date.now();
+            if (now - state.lastVoiceTime < 5000) return;
+            state.lastVoiceTime = now;
+            
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                const speech = new SpeechSynthesisUtterance();
+                speech.text = text;
+                speech.volume = 1;
+                speech.rate = 1;
+                speech.pitch = 1;
+                
+                // Find a voice based on gender selection
+                const voices = speechSynthesis.getVoices();
+                let selectedVoice = null;
+                
+                if (state.voiceGender === "female") {
+                    selectedVoice = voices.find(voice => 
+                        voice.name.includes('Female') || 
+                        voice.name.includes('Woman') || 
+                        voice.name.includes('Karen') || 
+                        voice.name.includes('Samantha')
+                    );
+                } else { // male
+                    selectedVoice = voices.find(voice => 
+                        voice.name.includes('Male') || 
+                        voice.name.includes('Man') || 
+                        voice.name.includes('Daniel') || 
+                        voice.name.includes('Thomas')
+                    );
+                }
+                
+                if (selectedVoice) {
+                    speech.voice = selectedVoice;
+                }
+                
+                window.speechSynthesis.speak(speech);
+            }
+        }
+
+        // Calculate distance between two coordinates (Haversine formula)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distance in km
+        }
+
+        // Update running stats
+        function updateStats() {
+            distanceDisplay.textContent = state.distance.toFixed(2);
+            
+            if (state.distance > 0 && state.timeLeft < state.workoutTime) {
+                const elapsedTime = state.workoutTime - state.timeLeft;
+                
+                // Calculate pace based on activity
+                let paceValue;
+                if (state.activity === "cycle") {
+                    paceValue = (elapsedTime / 60) / (state.distance * 3); // Adjusted for cycling
+                } else {
+                    paceValue = (elapsedTime / 60) / state.distance; // min/km
+                }
+                
+                const min = Math.floor(paceValue);
+                const sec = Math.round((paceValue - min) * 60);
+                paceDisplay.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+                
+                // Estimate calories burned based on activity
+                let calories;
+                if (state.activity === "walk") {
+                    calories = Math.round(state.distance * 60); // ~60 cal/km for walking
+                } else if (state.activity === "run") {
+                    calories = Math.round(state.distance * 70); // ~70 cal/km for running
+                } else { // cycling
+                    calories = Math.round(state.distance * 30); // ~30 cal/km for cycling
+                }
+                caloriesDisplay.textContent = calories;
+            }
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const progressPercentage = ((state.workoutTime - state.timeLeft) / state.workoutTime) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+        }
+
+        // Track user position
+        function trackPosition() {
+            if (!state.running || state.paused) return;
+            
+            const now = Date.now();
+            if (now - state.lastPositionTime < 5000) return;
+            state.lastPositionTime = now;
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude, longitude } = position.coords;
+                        
+                        if (state.positions.length > 0) {
+                            const lastPos = state.positions[state.positions.length - 1];
+                            const distanceSegment = calculateDistance(
+                                lastPos.lat, lastPos.lng, 
+                                latitude, longitude
+                            );
+                            state.distance += distanceSegment;
+                            
+                            // Update stats
+                            updateStats();
+                            
+                            // Check for milestone
+                            if (Math.floor(state.distance) > state.lastMilestone) {
+                                state.lastMilestone = Math.floor(state.distance);
+                                const milestoneMsg = `Great job! You've completed ${state.lastMilestone} kilometers!`;
+                                speak(milestoneMsg);
+                                
+                                // Update milestone display
+                                milestoneDisplay.textContent = `Next milestone at ${state.lastMilestone + 1} km`;
+                                milestoneDisplay.classList.add('highlight');
+                                setTimeout(() => milestoneDisplay.classList.remove('highlight'), 2000);
+                                
+                                // Add to storyline
+                                addToStoryline(milestoneMsg);
+                            }
+                        }
+                        
+                        state.positions.push({ lat: latitude, lng: longitude });
+                        
+                        // Update map
+                        state.map.setView([latitude, longitude], 15);
+                        state.polyline.setLatLngs(state.positions);
+                    },
+                    error => {
+                        console.error('Geolocation error:', error);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
+        }
+
+        // Add message to storyline
+        function addToStoryline(message) {
+            const elapsed = state.workoutTime - state.timeLeft;
+            
+            state.storyline.push({
+                time: elapsed,
+                message: message
+            });
+            
+            // Add to UI
+            const storyItem = document.createElement('div');
+            storyItem.className = 'story-item';
+            storyItem.textContent = `[${formatTime(elapsed)}] ${message}`;
+            storylineEl.prepend(storyItem);
+            
+            // Keep only last 5 messages visible
+            while (storylineEl.children.length > 5) {
+                storylineEl.removeChild(storylineEl.lastChild);
+            }
+        }
+
+        // Start the workout
+        function startWorkout() {
+            if (state.running) return;
+            
+            // Get settings
+            state.workoutTime = parseInt(workoutTimeSelect.value) * 60;
+            state.warmupTime = parseInt(warmupTimeSelect.value) * 60;
+            state.cooldownTime = parseInt(cooldownTimeSelect.value) * 60;
+            state.currentPhase = 1; // Start with warmup
+            state.currentExerciseIndex = 0;
+            state.exerciseTimer = warmupExercises[0].duration;
+            state.lastMilestone = 0;
+            
+            if (state.workoutTime < state.warmupTime + state.cooldownTime + 300) {
+                alert("Workout time is too short! Increase workout time or decrease warmup/cooldown time.");
+                return;
+            }
+            
+            state.running = true;
+            state.paused = false;
+            state.timeLeft = state.workoutTime;
+            state.startTime = new Date();
+            state.positions = [];
+            state.distance = 0;
+            state.storyline = [];
+            
+            // Clear map
+            if (state.polyline) {
+                state.map.removeLayer(state.polyline);
+                state.polyline = L.polyline([], {color: '#ff6b6b', weight: 5}).addTo(state.map);
+            }
+            
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            workoutTimeSelect.disabled = true;
+            warmupTimeSelect.disabled = true;
+            cooldownTimeSelect.disabled = true;
+            
+            // Start timer
+            state.timerInterval = setInterval(() => {
+                if (!state.paused) {
+                    state.timeLeft--;
+                    state.exerciseTimer--;
+                    updateTimerDisplay();
+                    updateProgress();
+                    
+                    // Check for phase transition
+                    checkPhaseTransition();
+                    
+                    // Update storyline
+                    updateStoryline();
+                    
+                    // Track position every 5 seconds
+                    if (state.timeLeft % 5 === 0) {
+                        trackPosition();
+                    }
+                    
+                    // End of workout
+                    if (state.timeLeft <= 0) {
+                        endWorkout();
+                    }
+                }
+            }, 1000);
+            
+            // Update UI
+            updatePhaseInfo();
+            
+            // Initial voice guidance
+            speak(`Welcome to your ${state.activity} journey! We're starting with warm-up exercises. First: ${warmupExercises[0].name}. ${warmupExercises[0].desc}`);
+        }
+
+        // Pause the workout
+        function pauseWorkout() {
+            state.paused = !state.paused;
+            pauseBtn.innerHTML = state.paused ? 
+                '<i class="fas fa-play"></i> Resume' : 
+                '<i class="fas fa-pause"></i> Pause';
+            
+            if (state.paused) {
+                speak("Workout paused. Take a break when you need to.");
+            } else {
+                speak("Resuming your workout. Let's continue!");
+            }
+        }
+
+        // Reset the workout
+        function resetWorkout() {
+            clearInterval(state.timerInterval);
+            
+            state.running = false;
+            state.paused = false;
+            state.timeLeft = 0;
+            state.currentPhase = 0;
+            state.positions = [];
+            state.distance = 0;
+            state.storyline = [];
+            state.lastMilestone = 0;
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            workoutTimeSelect.disabled = false;
+            warmupTimeSelect.disabled = false;
+            cooldownTimeSelect.disabled = false;
+            
+            // Reset stats
+            distanceDisplay.textContent = '0.00';
+            paceDisplay.textContent = '0:00';
+            timeLeftDisplay.textContent = '00:00';
+            caloriesDisplay.textContent = '0';
+            milestoneDisplay.textContent = "Next milestone at 1 km";
+            
+            // Reset map
+            if (state.polyline) {
+                state.map.removeLayer(state.polyline);
+                state.polyline = L.polyline([], {color: '#ff6b6b', weight: 5}).addTo(state.map);
+            }
+            
+            // Reset UI
+            updateTimerDisplay();
+            updatePhaseInfo();
+            progressBar.style.width = '0%';
+            phaseIndicators.forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById('phase-0').classList.add('active');
+            
+            // Clear storyline
+            storylineEl.innerHTML = '<div class="story-item">Welcome to your fitness journey! Set your workout and press Start.</div>';
+        }
+
+        // End the workout
+        function endWorkout() {
+            clearInterval(state.timerInterval);
+            state.running = false;
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            
+            phaseTitle.textContent = "Workout Completed!";
+            phaseDescription.textContent = "Great job! You've finished your workout. Remember to hydrate.";
+            const quote = showMotivationalQuote();
+            
+            speak("Congratulations! You've completed your workout. " + 
+                  `You covered ${state.distance.toFixed(2)} kilometers. ` +
+                  quote);
+                  
+            workoutTimeSelect.disabled = false;
+            warmupTimeSelect.disabled = false;
+            cooldownTimeSelect.disabled = false;
+        }
+
+        // Check if we need to transition to next phase
+        function checkPhaseTransition() {
+            const elapsed = state.workoutTime - state.timeLeft;
+            
+            // Check for exercise transition in warmup/cooldown
+            if ((state.currentPhase === 1 || state.currentPhase === 3) && state.exerciseTimer <= 0) {
+                const exercises = state.currentPhase === 1 ? warmupExercises : cooldownExercises;
+                
+                if (state.currentExerciseIndex < exercises.length - 1) {
+                    state.currentExerciseIndex++;
+                    state.exerciseTimer = exercises[state.currentExerciseIndex].duration;
+                    
+                    speak(`Next exercise: ${exercises[state.currentExerciseIndex].name}. ${exercises[state.currentExerciseIndex].desc}`);
+                }
+            }
+            
+            // Warmup phase transition
+            if (state.currentPhase === 1 && elapsed >= state.warmupTime) {
+                state.currentPhase = 2; // Main activity
+                const activityMsg = activityMessages[state.activity][0];
+                speak(`Great warmup! Now let's start ${state.activity === 'cycle' ? 'cycling' : state.activity + 'ing'}. ${activityMsg}`);
+            }
+            // Main activity transition
+            else if (state.currentPhase === 2 && elapsed >= state.workoutTime - state.cooldownTime) {
+                state.currentPhase = 3; // Cool-down
+                state.currentExerciseIndex = 0;
+                state.exerciseTimer = cooldownExercises[0].duration;
+                speak("Begin your cool down now. First exercise: " + cooldownExercises[0].name);
+            }
+            
+            updatePhaseInfo();
+        }
+
+        // Update storyline
+        function updateStoryline() {
+            const elapsed = state.workoutTime - state.timeLeft;
+            
+            // Add motivational messages at specific times
+            if (elapsed % 180 === 0 && state.currentPhase === 2) { // Every 3 minutes during main activity
+                const messages = activityMessages[state.activity];
+                const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+                
+                addToStoryline(randomMsg);
+                speak(randomMsg);
+            }
+        }
+
+        // Toggle voice feedback
+        function toggleVoice() {
+            state.voiceEnabled = !state.voiceEnabled;
+            voiceToggle.innerHTML = state.voiceEnabled ? 
+                '<span>🔊</span> Voice: ON' : 
+                '<span>🔇</span> Voice: OFF';
+            
+            voiceToggle.classList.toggle('active', state.voiceEnabled);
+        }
+
+        // Set activity type
+        function setActivity(activity) {
+            state.activity = activity;
+            
+            // Update UI
+            activityBtns.forEach(btn => {
+                if (btn.dataset.activity === activity) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Set appropriate initial message
+            motivationText.textContent = `"${activityMessages[activity][0]}"`;
+        }
+        
+        // Set voice gender
+        function setVoiceGender(gender) {
+            state.voiceGender = gender;
+            
+            // Update UI
+            genderBtns.forEach(btn => {
+                if (btn.dataset.gender === gender) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startWorkout);
+        pauseBtn.addEventListener('click', pauseWorkout);
+        resetBtn.addEventListener('click', resetWorkout);
+        
+        // Activity selection
+        activityBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setActivity(btn.dataset.activity);
+            });
+        });
+        
+        // Voice gender selection
+        genderBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setVoiceGender(btn.dataset.gender);
+            });
+        });
+
+        // Initialize the application
+        window.addEventListener('load', () => {
+            initMap();
+            updateTimerDisplay();
+            
+            // Set initial activity
+            setActivity("walk");
+            
+            // Set initial voice gender
+            setVoiceGender("female");
+            
+            // Request geolocation permission
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude, longitude } = position.coords;
+                        state.map.setView([latitude, longitude], 15);
+                    },
+                    error => {
+                        console.log('Geolocation permission denied or not supported');
+                    }
+                );
+            }
+            
+            // Preload voices
+            if (speechSynthesis) {
+                speechSynthesis.getVoices();
+            }
+        });
+    </script>
+</body>
+</html>
